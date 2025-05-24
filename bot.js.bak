@@ -707,7 +707,7 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating image... This may take a minute.');
                     
                     try {
-                        // fetch is already imported at the top level
+                        const fetch = (await import('node-fetch')).default;
                         const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
                             method: 'POST',
                             headers: {
@@ -1183,7 +1183,7 @@ class SchedulerPostBot {
                         await this.bot.sendMessage(chatId, `✅ Scheduled AI text post has been sent to ${targetChatId === chatId ? 'this chat' : 'your channel'}!`);
                     } else if (postData.contentType === 'ai-image') {
                         // Generate AI image
-                        // fetch is already imported at the top level
+                        const fetch = (await import('node-fetch')).default;
                         const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
                             method: 'POST',
                             headers: {

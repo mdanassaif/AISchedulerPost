@@ -1,5 +1,19 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// Import node-fetch at the top level
+let fetch;
+try {
+    // Try to use the global fetch if available (Node.js 18+)
+    if (typeof global.fetch === 'function') {
+        fetch = global.fetch;
+    } else {
+        // Otherwise use node-fetch
+        fetch = require('node-fetch');
+    }
+} catch (error) {
+    console.error('Error importing fetch:', error);
+    // Fallback to dynamic import if needed
+    fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+}
 const { categories } = require('./config');
 
 class GeminiService {
