@@ -1,6 +1,6 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const fetch = require('node-fetch');
+const axios = require('axios');
 
 // SchedulerPost Bot
 class SchedulerPostBot {
@@ -274,42 +274,45 @@ class SchedulerPostBot {
             // Test Hugging Face API
             if (process.env.HUGGINGFACE_API_KEY) {
                 try {
-                    // fetch is now imported at the top of the file
+                    // Using axios instead of fetch
                     
                     // Try a different approach - use a text-to-image model which is more likely to be available
-                    const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-                        method: 'POST',
+                    const response = await axios({
+                        method: 'post',
+                        url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
                         headers: {
                             'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ 
+                        data: { 
                             inputs: "a photo of an astronaut riding a horse on mars"
-                        })
+                        },
+                        responseType: 'arraybuffer'
                     });
                     
-                    if (response.ok) {
+                    if (response.status === 200) {
                         results += '✅ Hugging Face API: Working\n';
                     } else {
-                        const errorText = await response.text().catch(e => 'Could not read error response');
+                        const errorText = response.data.toString();
                         results += `❌ Hugging Face API: HTTP ${response.status}\n`;
                         results += `Error details: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}\n`;
                         
                         // If we get a 404, try one more model as a fallback
                         if (response.status === 404) {
                             try {
-                                const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/bert-base-uncased', {
-                                    method: 'POST',
+                                const fallbackResponse = await axios({
+                                    method: 'post',
+                                    url: 'https://api-inference.huggingface.co/models/bert-base-uncased',
                                     headers: {
                                         'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                         'Content-Type': 'application/json',
                                     },
-                                    body: JSON.stringify({ 
+                                    data: { 
                                         inputs: "Hello world"
-                                    })
+                                    }
                                 });
                                 
-                                if (fallbackResponse.ok) {
+                                if (fallbackResponse.status === 200) {
                                     results += '✅ Fallback Hugging Face API: Working\n';
                                 } else {
                                     results += `❌ Fallback also failed: HTTP ${fallbackResponse.status}\n`;
@@ -518,21 +521,23 @@ class SchedulerPostBot {
                             
                             try {
                                 // Generate image
-                                // fetch is now imported at the top of the file
-                                const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-                                    method: 'POST',
+                                // Using axios instead of fetch
+                                const response = await axios({
+                                    method: 'post',
+                                    url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
                                     headers: {
                                         'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                         'Content-Type': 'application/json',
                                     },
-                                    body: JSON.stringify({ 
+                                    data: { 
                                         inputs: imagePrompt
-                                    })
+                                    },
+                                    responseType: 'arraybuffer'
                                 });
                                 
-                                if (response.ok) {
+                                if (response.status === 200) {
                                     // Get the image data
-                                    const imageBuffer = await response.buffer();
+                                    const imageBuffer = Buffer.from(response.data);
                                     
                                     // Send the complete post preview
                                     await this.bot.sendMessage(chatId, '✅ Here\'s your complete post:');
@@ -550,7 +555,7 @@ class SchedulerPostBot {
                                     // Show post options
                                     await this.showPostOptions(chatId, postText, imageBuffer, imagePrompt);
                                 } else {
-                                    const errorText = await response.text();
+                                    const errorText = response.data.toString();
                                     await this.bot.sendMessage(chatId, `❌ Failed to generate image: ${response.status} ${errorText.substring(0, 100)}`);
                                     // Show options for text-only post as fallback
                                     await this.bot.sendMessage(chatId, '✅ Proceeding with text-only post:');
@@ -692,21 +697,23 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating image... This may take a minute.');
                     
                     try {
-                        // fetch is now imported at the top of the file
-                        const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-                            method: 'POST',
+                        // Using axios instead of fetch
+                        const response = await axios({
+                            method: 'post',
+                            url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
                             headers: {
                                 'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ 
+                            data: { 
                                 inputs: prompt
-                            })
+                            },
+                            responseType: 'arraybuffer'
                         });
                         
-                        if (response.ok) {
+                        if (response.status === 200) {
                             // Get the image data
-                            const imageBuffer = await response.buffer();
+                            const imageBuffer = Buffer.from(response.data);
                             
                             // Send the image
                             await this.bot.sendPhoto(chatId, imageBuffer, { caption: `Generated image for: "${prompt}"` });
@@ -1168,16 +1175,18 @@ class SchedulerPostBot {
                         await this.bot.sendMessage(chatId, `✅ Scheduled AI text post has been sent to ${targetChatId === chatId ? 'this chat' : 'your channel'}!`);
                     } else if (postData.contentType === 'ai-image') {
                         // Generate AI image
-                        // fetch is now imported at the top of the file
-                        const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-                            method: 'POST',
+                        // Using axios instead of fetch
+                        const response = await axios({
+                            method: 'post',
+                            url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
                             headers: {
                                 'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ 
+                            data: { 
                                 inputs: postData.prompt
-                            })
+                            },
+                            responseType: 'arraybuffer'
                         });
                         
                         if (response.ok) {
