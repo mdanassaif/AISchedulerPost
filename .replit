@@ -1,0 +1,18 @@
+run = "npm start"
+language = "nodejs"
+
+[env]
+NODE_ENV = "production"
+
+[nix]
+channel = "stable-22_11"
+
+[packager]
+language = "nodejs"
+
+[packager.features]
+packageSearch = true
+guessImports = true
+
+[unitTest]
+language = "nodejs"

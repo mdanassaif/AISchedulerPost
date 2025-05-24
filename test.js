@@ -1,7 +1,7 @@
 // Simple test script for SchedulerPost Bot
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = require('node-fetch');
 
 // Check if required environment variables are set
 const requiredVars = ['TELEGRAM_BOT_TOKEN', 'GEMINI_API_KEY', 'HUGGINGFACE_API_KEY'];

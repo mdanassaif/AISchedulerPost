@@ -1,4 +1,4 @@
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const fetch = require('node-fetch');
 const FormData = require('form-data');
 
 class ImageService {
