@@ -1,6 +1,5 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios');
 
 // SchedulerPost Bot
 class SchedulerPostBot {
@@ -257,12 +256,12 @@ class SchedulerPostBot {
             // Test Gemini API
             if (process.env.GEMINI_API_KEY) {
                 try {
-                    // Use our custom Gemini service
-                    const GeminiAxiosService = require('./utils/geminiAxios');
-                    const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
-                    
-                    // Test with a simple prompt
-                    const response = await geminiService.generateContent("Say hello in one word");
+                    const { GoogleGenerativeAI } = require('@google/generative-ai');
+                    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+                    // Use the latest model version
+                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                    const result = await model.generateContent("Say hello in one word");
+                    const response = await result.response;
                     results += '✅ Gemini API: Working\n';
                 } catch (error) {
                     results += `❌ Gemini API: ${error.message}\n`;
@@ -274,45 +273,42 @@ class SchedulerPostBot {
             // Test Hugging Face API
             if (process.env.HUGGINGFACE_API_KEY) {
                 try {
-                    // Using axios instead of fetch
+                    const fetch = (await import('node-fetch')).default;
                     
                     // Try a different approach - use a text-to-image model which is more likely to be available
-                    const response = await axios({
-                        method: 'post',
-                        url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
+                    const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+                        method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                             'Content-Type': 'application/json',
                         },
-                        data: { 
+                        body: JSON.stringify({ 
                             inputs: "a photo of an astronaut riding a horse on mars"
-                        },
-                        responseType: 'arraybuffer'
+                        })
                     });
                     
-                    if (response.status === 200) {
+                    if (response.ok) {
                         results += '✅ Hugging Face API: Working\n';
                     } else {
-                        const errorText = response.data.toString();
+                        const errorText = await response.text().catch(e => 'Could not read error response');
                         results += `❌ Hugging Face API: HTTP ${response.status}\n`;
                         results += `Error details: ${errorText.substring(0, 100)}${errorText.length > 100 ? '...' : ''}\n`;
                         
                         // If we get a 404, try one more model as a fallback
                         if (response.status === 404) {
                             try {
-                                const fallbackResponse = await axios({
-                                    method: 'post',
-                                    url: 'https://api-inference.huggingface.co/models/bert-base-uncased',
+                                const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/bert-base-uncased', {
+                                    method: 'POST',
                                     headers: {
                                         'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                         'Content-Type': 'application/json',
                                     },
-                                    data: { 
+                                    body: JSON.stringify({ 
                                         inputs: "Hello world"
-                                    }
+                                    })
                                 });
                                 
-                                if (fallbackResponse.status === 200) {
+                                if (fallbackResponse.ok) {
                                     results += '✅ Fallback Hugging Face API: Working\n';
                                 } else {
                                     results += `❌ Fallback also failed: HTTP ${fallbackResponse.status}\n`;
@@ -434,9 +430,10 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating text content...');
                     
                     try {
-                        // Generate text content using our custom Gemini service
-                        const GeminiAxiosService = require('./utils/geminiAxios');
-                        const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
+                        // Generate text content
+                        const { GoogleGenerativeAI } = require('@google/generative-ai');
+                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+                        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
                         
                         // Generate content with specific instructions for shorter post
                         const textPrompt = `Write a short, engaging post about: ${title}. 
@@ -448,8 +445,9 @@ class SchedulerPostBot {
                         4. Do NOT include any hashtags, asterisks, or formatting
                         5. Total length should be around 3-5 sentences total`;
                         
-                        // Use our custom service that doesn't rely on fetch
-                        const postText = await geminiService.generateContent(textPrompt);
+                        const textResult = await model.generateContent(textPrompt);
+                        const textResponse = await textResult.response;
+                        const postText = textResponse.text();
                         
                         // Send the generated text
                         await this.bot.sendMessage(chatId, postText);
@@ -519,23 +517,21 @@ class SchedulerPostBot {
                             
                             try {
                                 // Generate image
-                                // Using axios instead of fetch
-                                const response = await axios({
-                                    method: 'post',
-                                    url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
+                                const fetch = (await import('node-fetch')).default;
+                                const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+                                    method: 'POST',
                                     headers: {
                                         'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                         'Content-Type': 'application/json',
                                     },
-                                    data: { 
+                                    body: JSON.stringify({ 
                                         inputs: imagePrompt
-                                    },
-                                    responseType: 'arraybuffer'
+                                    })
                                 });
                                 
-                                if (response.status === 200) {
+                                if (response.ok) {
                                     // Get the image data
-                                    const imageBuffer = Buffer.from(response.data);
+                                    const imageBuffer = await response.buffer();
                                     
                                     // Send the complete post preview
                                     await this.bot.sendMessage(chatId, '✅ Here\'s your complete post:');
@@ -553,7 +549,7 @@ class SchedulerPostBot {
                                     // Show post options
                                     await this.showPostOptions(chatId, postText, imageBuffer, imagePrompt);
                                 } else {
-                                    const errorText = response.data.toString();
+                                    const errorText = await response.text();
                                     await this.bot.sendMessage(chatId, `❌ Failed to generate image: ${response.status} ${errorText.substring(0, 100)}`);
                                     // Show options for text-only post as fallback
                                     await this.bot.sendMessage(chatId, '✅ Proceeding with text-only post:');
@@ -610,9 +606,9 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating content...');
                     
                     try {
-                        // Use our custom Gemini service
-                        const GeminiAxiosService = require('./utils/geminiAxios');
-                        const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
+                        const { GoogleGenerativeAI } = require('@google/generative-ai');
+                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+                        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
                         
                         // Generate content with a more specific instruction
                         const fullPrompt = `Write a short, engaging post about: ${prompt}. 
@@ -624,8 +620,9 @@ class SchedulerPostBot {
                         4. Do NOT include any hashtags, asterisks, or formatting
                         5. Total length should be around 3-5 sentences total`;
                         
-                        // Use our custom service that doesn't rely on fetch
-                        const text = await geminiService.generateContent(fullPrompt);
+                        const result = await model.generateContent(fullPrompt);
+                        const response = await result.response;
+                        const text = response.text();
                         
                         // Send the generated content
                         await this.bot.sendMessage(chatId, text);
@@ -694,23 +691,21 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating image... This may take a minute.');
                     
                     try {
-                        // Using axios instead of fetch
-                        const response = await axios({
-                            method: 'post',
-                            url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
+                        const fetch = (await import('node-fetch')).default;
+                        const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+                            method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                 'Content-Type': 'application/json',
                             },
-                            data: { 
+                            body: JSON.stringify({ 
                                 inputs: prompt
-                            },
-                            responseType: 'arraybuffer'
+                            })
                         });
                         
-                        if (response.status === 200) {
+                        if (response.ok) {
                             // Get the image data
-                            const imageBuffer = Buffer.from(response.data);
+                            const imageBuffer = await response.buffer();
                             
                             // Send the image
                             await this.bot.sendPhoto(chatId, imageBuffer, { caption: `Generated image for: "${prompt}"` });
@@ -1147,9 +1142,10 @@ class SchedulerPostBot {
                 try {
                     // Generate and post content based on type
                     if (postData.contentType === 'ai-text') {
-                        // Generate AI text using our custom service
-                        const GeminiAxiosService = require('./utils/geminiAxios');
-                        const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
+                        // Generate AI text
+                        const { GoogleGenerativeAI } = require('@google/generative-ai');
+                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+                        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
                         
                         const fullPrompt = `Write a short, engaging post about: ${postData.prompt}. 
                         Make it suitable for a Telegram channel post.
@@ -1160,8 +1156,9 @@ class SchedulerPostBot {
                         4. Do NOT include any hashtags, asterisks, or formatting
                         5. Total length should be around 3-5 sentences total`;
                         
-                        // Use our custom service that doesn't rely on fetch
-                        const text = await geminiService.generateContent(fullPrompt);
+                        const result = await model.generateContent(fullPrompt);
+                        const response = await result.response;
+                        const text = response.text();
                         
                         // Post to target chat/channel
                         await this.bot.sendMessage(targetChatId, text);
@@ -1170,23 +1167,21 @@ class SchedulerPostBot {
                         await this.bot.sendMessage(chatId, `✅ Scheduled AI text post has been sent to ${targetChatId === chatId ? 'this chat' : 'your channel'}!`);
                     } else if (postData.contentType === 'ai-image') {
                         // Generate AI image
-                        // Using axios instead of fetch
-                        const response = await axios({
-                            method: 'post',
-                            url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
+                        const fetch = (await import('node-fetch')).default;
+                        const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+                            method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                                 'Content-Type': 'application/json',
                             },
-                            data: { 
+                            body: JSON.stringify({ 
                                 inputs: postData.prompt
-                            },
-                            responseType: 'arraybuffer'
+                            })
                         });
                         
-                        if (response.status === 200) {
+                        if (response.ok) {
                             // Get the image data
-                            const imageBuffer = Buffer.from(response.data);
+                            const imageBuffer = await response.buffer();
                             
                             // Post to target chat/channel
                             await this.bot.sendPhoto(targetChatId, imageBuffer, { caption: postData.prompt });
