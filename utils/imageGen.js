@@ -1,16 +1,15 @@
-// Import node-fetch at the top level
 let fetch;
 try {
-    // Try to use the global fetch if available (Node.js 18+)
+
     if (typeof global.fetch === 'function') {
         fetch = global.fetch;
     } else {
-        // Otherwise use node-fetch
+
         fetch = require('node-fetch');
     }
 } catch (error) {
     console.error('Error importing fetch:', error);
-    // Fallback to dynamic import if needed
+
     fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 }
 const FormData = require('form-data');
@@ -25,7 +24,6 @@ class ImageService {
 
     async generateImage(prompt, negativePrompt = '') {
         try {
-            // First try with the high-quality model
             try {
                 return await this._generateWithModel(this.defaultModel, prompt, negativePrompt);
             } catch (error) {
@@ -66,12 +64,11 @@ class ImageService {
     }
 
     async downloadImage(imageBuffer) {
-        return imageBuffer; // Already have the buffer from Hugging Face
+        return imageBuffer; 
     }
 
     async getTechImage(prompt) {
         try {
-            // Enhance the prompt for better tech-related images
             const enhancedPrompt = `professional tech photography, ${prompt}, high quality, 4k, detailed, professional lighting, studio quality`;
             const negativePrompt = 'cartoon, illustration, painting, drawing, text, watermark, signature, blurry, low quality, distorted';
 

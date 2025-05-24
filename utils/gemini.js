@@ -1,17 +1,13 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-// Import node-fetch at the top level
 let fetch;
 try {
-    // Try to use the global fetch if available (Node.js 18+)
     if (typeof global.fetch === 'function') {
         fetch = global.fetch;
     } else {
-        // Otherwise use node-fetch
         fetch = require('node-fetch');
     }
 } catch (error) {
     console.error('Error importing fetch:', error);
-    // Fallback to dynamic import if needed
     fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 }
 const { categories } = require('./config');
@@ -24,8 +20,8 @@ class GeminiService {
         this.apiKey = apiKey;
         this.genAI = new GoogleGenerativeAI(apiKey);
         this.lastRequestTime = 0;
-        this.minRequestInterval = 2000; // 2 seconds for free tier
-        this.model = "gemini-2.0-flash"; // Updated to current model
+        this.minRequestInterval = 2000; // 2 seconds 
+        this.model = "gemini-2.0-flash"; 
     }
 
     async sleep(ms) {
