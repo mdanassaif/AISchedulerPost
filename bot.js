@@ -1189,9 +1189,9 @@ class SchedulerPostBot {
                             responseType: 'arraybuffer'
                         });
                         
-                        if (response.ok) {
+                        if (response.status === 200) {
                             // Get the image data
-                            const imageBuffer = await response.buffer();
+                            const imageBuffer = Buffer.from(response.data);
                             
                             // Post to target chat/channel
                             await this.bot.sendPhoto(targetChatId, imageBuffer, { caption: postData.prompt });

@@ -1,7 +1,7 @@
 // Simple test script for SchedulerPost Bot
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const fetch = require('node-fetch');
+const axios = require('axios');
 
 // Check if required environment variables are set
 const requiredVars = ['TELEGRAM_BOT_TOKEN', 'GEMINI_API_KEY', 'HUGGINGFACE_API_KEY'];
@@ -63,38 +63,41 @@ async function runTests() {
         // Test 3: Test Hugging Face API
         console.log('\nTest 3: Testing Hugging Face API connection...');
         console.log('This may take a minute as the model loads...');
-        // fetch is now imported at the top of the file
-        const hfResponse = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-            method: 'POST',
+        // Using axios instead of fetch
+        const hfResponse = await axios({
+            method: 'post',
+            url: 'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0',
             headers: {
                 'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
+            data: { 
                 inputs: "a simple test image"
-            })
+            },
+            responseType: 'arraybuffer'
         });
         
-        if (hfResponse.ok) {
+        if (hfResponse.status === 200) {
             console.log('✅ Hugging Face API connection successful');
         } else {
-            const errorText = await hfResponse.text();
+            const errorText = hfResponse.data.toString();
             console.log(`❌ Hugging Face API error: ${hfResponse.status} - ${errorText.substring(0, 100)}`);
             
             // Try a fallback model
             console.log('Trying fallback model...');
-            const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/bert-base-uncased', {
-                method: 'POST',
+            const fallbackResponse = await axios({
+                method: 'post',
+                url: 'https://api-inference.huggingface.co/models/bert-base-uncased',
                 headers: {
                     'Authorization': `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
+                data: { 
                     inputs: "Hello world"
-                })
+                }
             });
             
-            if (fallbackResponse.ok) {
+            if (fallbackResponse.status === 200) {
                 console.log('✅ Fallback Hugging Face API connection successful');
             } else {
                 console.log(`❌ Fallback Hugging Face API also failed: ${fallbackResponse.status}`);

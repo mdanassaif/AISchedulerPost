@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const axios = require('axios');
 const FormData = require('form-data');
 
 class ImageService {
@@ -25,13 +25,14 @@ class ImageService {
     }
 
     async _generateWithModel(model, prompt, negativePrompt) {
-        const response = await fetch(`${this.baseUrl}/${model}`, {
-            method: 'POST',
+        const response = await axios({
+            method: 'post',
+            url: `${this.baseUrl}/${model}`,
             headers: {
                 'Authorization': `Bearer ${this.apiKey}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
+            data: {
                 inputs: prompt,
                 negative_prompt: negativePrompt || 'blurry, low quality, distorted, ugly, bad anatomy, watermark',
                 parameters: {
@@ -40,14 +41,15 @@ class ImageService {
                     width: 1024,
                     height: 1024,
                 }
-            })
+            },
+            responseType: 'arraybuffer'
         });
 
-        if (!response.ok) {
+        if (response.status !== 200) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const imageBuffer = await response.buffer();
+        const imageBuffer = Buffer.from(response.data);
         return imageBuffer;
     }
 

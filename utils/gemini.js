@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const fetch = require('node-fetch');
+const axios = require('axios');
 const { categories } = require('./config');
 
 class GeminiService {
