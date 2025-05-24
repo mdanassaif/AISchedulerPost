@@ -257,12 +257,12 @@ class SchedulerPostBot {
             // Test Gemini API
             if (process.env.GEMINI_API_KEY) {
                 try {
-                    const { GoogleGenerativeAI } = require('@google/generative-ai');
-                    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                    // Use the latest model version
-                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-                    const result = await model.generateContent("Say hello in one word");
-                    const response = await result.response;
+                    // Use our custom Gemini service
+                    const GeminiAxiosService = require('./utils/geminiAxios');
+                    const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
+                    
+                    // Test with a simple prompt
+                    const response = await geminiService.generateContent("Say hello in one word");
                     results += '✅ Gemini API: Working\n';
                 } catch (error) {
                     results += `❌ Gemini API: ${error.message}\n`;
@@ -434,10 +434,9 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating text content...');
                     
                     try {
-                        // Generate text content
-                        const { GoogleGenerativeAI } = require('@google/generative-ai');
-                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                        // Generate text content using our custom Gemini service
+                        const GeminiAxiosService = require('./utils/geminiAxios');
+                        const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
                         
                         // Generate content with specific instructions for shorter post
                         const textPrompt = `Write a short, engaging post about: ${title}. 
@@ -449,9 +448,8 @@ class SchedulerPostBot {
                         4. Do NOT include any hashtags, asterisks, or formatting
                         5. Total length should be around 3-5 sentences total`;
                         
-                        const textResult = await model.generateContent(textPrompt);
-                        const textResponse = await textResult.response;
-                        const postText = textResponse.text();
+                        // Use our custom service that doesn't rely on fetch
+                        const postText = await geminiService.generateContent(textPrompt);
                         
                         // Send the generated text
                         await this.bot.sendMessage(chatId, postText);
@@ -612,9 +610,9 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating content...');
                     
                     try {
-                        const { GoogleGenerativeAI } = require('@google/generative-ai');
-                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                        // Use our custom Gemini service
+                        const GeminiAxiosService = require('./utils/geminiAxios');
+                        const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
                         
                         // Generate content with a more specific instruction
                         const fullPrompt = `Write a short, engaging post about: ${prompt}. 
@@ -626,9 +624,8 @@ class SchedulerPostBot {
                         4. Do NOT include any hashtags, asterisks, or formatting
                         5. Total length should be around 3-5 sentences total`;
                         
-                        const result = await model.generateContent(fullPrompt);
-                        const response = await result.response;
-                        const text = response.text();
+                        // Use our custom service that doesn't rely on fetch
+                        const text = await geminiService.generateContent(fullPrompt);
                         
                         // Send the generated content
                         await this.bot.sendMessage(chatId, text);
@@ -1150,10 +1147,9 @@ class SchedulerPostBot {
                 try {
                     // Generate and post content based on type
                     if (postData.contentType === 'ai-text') {
-                        // Generate AI text
-                        const { GoogleGenerativeAI } = require('@google/generative-ai');
-                        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                        // Generate AI text using our custom service
+                        const GeminiAxiosService = require('./utils/geminiAxios');
+                        const geminiService = new GeminiAxiosService(process.env.GEMINI_API_KEY);
                         
                         const fullPrompt = `Write a short, engaging post about: ${postData.prompt}. 
                         Make it suitable for a Telegram channel post.
@@ -1164,9 +1160,8 @@ class SchedulerPostBot {
                         4. Do NOT include any hashtags, asterisks, or formatting
                         5. Total length should be around 3-5 sentences total`;
                         
-                        const result = await model.generateContent(fullPrompt);
-                        const response = await result.response;
-                        const text = response.text();
+                        // Use our custom service that doesn't rely on fetch
+                        const text = await geminiService.generateContent(fullPrompt);
                         
                         // Post to target chat/channel
                         await this.bot.sendMessage(targetChatId, text);
