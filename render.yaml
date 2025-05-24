@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: schedulerpost-bot
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: HUGGINGFACE_API_KEY
+        sync: false
+      - key: CHANNEL_ID
+        sync: false
+        # Optional, can be left blank
