@@ -1,6 +1,7 @@
 // Simple test script for SchedulerPost Bot
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // Check if required environment variables are set
 const requiredVars = ['TELEGRAM_BOT_TOKEN', 'GEMINI_API_KEY', 'HUGGINGFACE_API_KEY'];
@@ -62,7 +63,7 @@ async function runTests() {
         // Test 3: Test Hugging Face API
         console.log('\nTest 3: Testing Hugging Face API connection...');
         console.log('This may take a minute as the model loads...');
-        const fetch = (await import('node-fetch')).default;
+        // fetch is now imported at the top of the file
         const hfResponse = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
             method: 'POST',
             headers: {

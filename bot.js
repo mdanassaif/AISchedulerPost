@@ -1,5 +1,6 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // SchedulerPost Bot
 class SchedulerPostBot {
@@ -273,7 +274,7 @@ class SchedulerPostBot {
             // Test Hugging Face API
             if (process.env.HUGGINGFACE_API_KEY) {
                 try {
-                    const fetch = (await import('node-fetch')).default;
+                    // fetch is now imported at the top of the file
                     
                     // Try a different approach - use a text-to-image model which is more likely to be available
                     const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
@@ -517,7 +518,7 @@ class SchedulerPostBot {
                             
                             try {
                                 // Generate image
-                                const fetch = (await import('node-fetch')).default;
+                                // fetch is now imported at the top of the file
                                 const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
                                     method: 'POST',
                                     headers: {
@@ -691,7 +692,7 @@ class SchedulerPostBot {
                     await this.bot.sendMessage(chatId, '⏳ Generating image... This may take a minute.');
                     
                     try {
-                        const fetch = (await import('node-fetch')).default;
+                        // fetch is now imported at the top of the file
                         const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
                             method: 'POST',
                             headers: {
@@ -1167,7 +1168,7 @@ class SchedulerPostBot {
                         await this.bot.sendMessage(chatId, `✅ Scheduled AI text post has been sent to ${targetChatId === chatId ? 'this chat' : 'your channel'}!`);
                     } else if (postData.contentType === 'ai-image') {
                         // Generate AI image
-                        const fetch = (await import('node-fetch')).default;
+                        // fetch is now imported at the top of the file
                         const response = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
                             method: 'POST',
                             headers: {
